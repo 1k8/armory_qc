@@ -676,9 +676,12 @@ def make_forward_base(con_mesh, parse_opacity=False, transluc_pass=False):
         vert.write('wvpposition = gl_Position;')
         frag.write('vec2 texCoord = (wvpposition.xy / wvpposition.w) * 0.5 + 0.5;')
 
-    if '_VoxelAOvar' in wrd.world_defs and not parse_opacity:
-        frag.add_uniform("sampler2D voxels_ao");
-        frag.write('envl *= textureLod(voxels_ao, texCoord, 0.0).rrr;')
+    if '_VoxelAOvar' in wrd.world_defs:
+        if parse_opacity:
+            frag.write('envl *= 1.0 - traceAO(wposition, n, voxels, clipmaps);')
+        else:
+            frag.add_uniform("sampler2D voxels_ao");
+            frag.write('envl *= textureLod(voxels_ao, texCoord, 0.0).rrr;')
 
     frag.write('vec3 indirect = envl;')
 
