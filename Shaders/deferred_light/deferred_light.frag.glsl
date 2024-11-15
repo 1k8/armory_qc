@@ -285,9 +285,10 @@ void main() {
 	envl.rgb *= envmapStrength * occspec.x;
 
 #ifdef _VoxelGI
-	fragColor.rgb = textureLod(voxels_diffuse, texCoord, 0.0).rgb * albedo * voxelgiDiff;
+	vec3 indirect_specular = vec3(0.0);
+	vec3 indirect_diffuse = textureLod(voxels_diffuse, texCoord, 0.0).rgb * albedo * voxelgiDiff;
 	if(roughness < 1.0 && occspec.y > 0.0)
-		fragColor.rgb += textureLod(voxels_specular, texCoord, 0.0).rgb * occspec.y * voxelgiRefl;
+		indirect_specular = textureLod(voxels_specular, texCoord, 0.0).rgb * occspec.y * voxelgiRefl;
 #endif
 
 #ifdef _VoxelAOvar
@@ -342,7 +343,7 @@ void main() {
 	float sdotVH = max(0.0, dot(v, sh));
 	float sdotNL = max(0.0, dot(n, sunDir));
 	vec3 svisibility = vec3(1.0);
-	vec3 sdirect = lambertDiffuseBRDF(albedo, sdotNL) +
+	vec3 sdirect =  lambertDiffuseBRDF(albedo, sdotNL) +
 	               specularBRDF(f0, roughness, sdotNL, sdotNH, dotNV, sdotVH) * occspec.y;
 
 	#ifdef _ShadowMap
@@ -398,7 +399,11 @@ void main() {
 	svisibility *= clamp(sdotNL + 2.0 * occspec.x * occspec.x - 1.0, 0.0, 1.0);
 	#endif
 
-	fragColor.rgb += sdirect * sunCol * svisibility;
+	fragColor.rgb += sdirect * sunCol * svisibility
+	#ifdef _VoxelGI
+	+ indirect_diffuse + indirect_specular
+	#endif
+	;
 
 //	#ifdef _Hair // Aniso
 // 	if (matid == 2) {

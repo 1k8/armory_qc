@@ -667,8 +667,6 @@ class Inc {
 		var res = iron.RenderPath.getVoxelRes();
 		var resZ =  iron.RenderPath.getVoxelResZ();
 
-		t.mipmaps = false;
-
 		if (t.name == "voxels_diffuse" || t.name == "voxels_specular" || t.name == "voxels_ao") {
 			t.width = 0;
 			t.height = 0;
@@ -697,7 +695,6 @@ class Inc {
 						t.width = res * 6;
 						t.height = res;
 						t.depth = res;
-						t.mipmaps = true;
 					}
 				}
 				#else
@@ -713,20 +710,19 @@ class Inc {
 						t.width = res;
 						t.height = res;
 						t.depth = res * 3;
-						t.mipmaps = true;
 					}
 					else {
 						t.format = "R32";
 						t.width = res * 6;
 						t.height = res;
 						t.depth = res * 12;
-						t.mipmaps = true;
 					}
 				}
 				#end
 			}
 		}
 		t.is_image = true;
+		t.mipmaps = true;
 		path.createRenderTarget(t);
 	}
 	#end

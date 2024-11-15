@@ -135,9 +135,9 @@ void main() {
 			wposition += vec3(clipmaps[clipmapLevel * 10 + 4], clipmaps[clipmapLevel * 10 + 5], clipmaps[clipmapLevel * 10 + 6]);
 
 			radiance = basecol;
-			vec4 trace = traceDiffuse(wposition, wnormal, voxelsSampler, clipmaps, gl_GlobalInvocationID.xy);
+			vec4 trace = traceDiffuse(wposition, wnormal, voxelsSampler, clipmaps);
 			vec3 indirect = trace.rgb + envl.rgb * (1.0 - trace.a);
-			radiance.rgb *= light / PI + indirect.rgb;
+			radiance.rgb *= light / PI + indirect;
 			radiance.rgb += emission.rgb;
 
 			#else
