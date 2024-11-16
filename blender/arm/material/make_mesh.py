@@ -612,6 +612,9 @@ def make_forward_base(con_mesh, parse_opacity=False, transluc_pass=False):
     sh.add_out('vec3 eyeDir')
     sh.add_uniform('vec3 eye', '_cameraPosition')
     sh.write('eyeDir = eye - wposition;')
+    if not parse_opacity and '_VoxelAOvar' in wrd.world_defs or '_VoxelGI' in wrd.world_defs:
+        sh.add_out('vec4 wvpposition')
+        sh.write('wvpposition = gl_Position;')
 
     frag.add_include('std/light.glsl')
     is_shadows = '_ShadowMap' in wrd.world_defs
@@ -672,9 +675,8 @@ def make_forward_base(con_mesh, parse_opacity=False, transluc_pass=False):
             frag.add_uniform('sampler3D voxelsSDF')
             frag.add_uniform('vec3 eye', "_cameraPosition")
             frag.add_uniform('float clipmaps[10 * voxelgiClipmapCount]', '_clipmaps')
-        vert.add_out('vec4 wvpposition')
-        vert.write('wvpposition = gl_Position;')
-        frag.write('vec2 texCoord = (wvpposition.xy / wvpposition.w) * 0.5 + 0.5;')
+        else:
+            frag.write('vec2 texCoord = (wvpposition.xy / wvpposition.w) * 0.5 + 0.5;')
 
     if '_VoxelAOvar' in wrd.world_defs:
         if parse_opacity:
@@ -687,7 +689,8 @@ def make_forward_base(con_mesh, parse_opacity=False, transluc_pass=False):
 
     if '_VoxelGI' in wrd.world_defs:
         if parse_opacity:
-            frag.write('indirect = traceDiffuse(wposition, n, voxels, clipmaps).rgb * albedo * voxelgiDiff;')
+            frag.write('vec4 indirect_diffuse = traceDiffuse(wposition, n, voxels, clipmaps);')
+            frag.write('indirect = (indirect_diffuse.rgb + envl.rgb * (1.0 - indirect_diffuse.a)) * voxelgiDiff;')
             frag.write('if (roughness < 1.0 && specular > 0.0)')
             frag.write('    indirect += traceSpecular(wposition, n, voxels, voxelsSDF, normalize(eye - wposition), roughness, clipmaps, gl_FragCoord.xy).rgb * specular * voxelgiRefl;')
         else:
@@ -792,7 +795,7 @@ def make_forward_base(con_mesh, parse_opacity=False, transluc_pass=False):
 
     if '_VoxelRefract' in wrd.world_defs and parse_opacity:
         frag.write('if (opacity < 1.0) {')
-        frag.write('    vec3 refraction = traceRefraction(wposition, n, voxels, voxelsSDF, normalize(eye - wposition), ior, roughness, clipmaps, texCoord).rgb * voxelgiRefr;')
+        frag.write('    vec3 refraction = traceRefraction(wposition, n, voxels, voxelsSDF, normalize(eye - wposition), ior, roughness, clipmaps, gl_FragCoord.xy).rgb * voxelgiRefr;')
         frag.write('    indirect = mix(refraction, indirect, opacity);')
         frag.write('    direct = mix(refraction, direct, opacity);')
         frag.write('}')
