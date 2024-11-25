@@ -1,12 +1,10 @@
 package armory.logicnode;
 
-import iron.object.Animation;
 import iron.object.Object;
 import iron.Scene;
-import kha.arrays.Float32Array;
-import iron.object.ObjectAnimation;
 
 class PlayActionFromNode extends LogicNode {
+
 
 	var animation: Animation;
 	var startFrame: Int;
@@ -33,10 +31,21 @@ class PlayActionFromNode extends LogicNode {
 				}
 			}
 		}
-	}
 
 	override function run(from: Int) {
 		var object: Object = inputs[1].get();
+		var action: String = inputs[2].get();
+		var startFrame:Int = inputs[3].get();
+		var blendTime: Float = inputs[4].get();
+		var speed: Float = inputs[5].get();
+		var loop: Bool = inputs[6].get();
+		
+
+		if (object == null) return;
+		var animation = object.animation;
+		if (animation == null) animation = object.getBoneAnimation(object.uid);
+
+		animation.play(action, function() {
 		action = inputs[2].get();
 		startFrame = inputs[3].get();
 		endFrame = inputs[4].get();
@@ -185,9 +194,8 @@ class PlayActionFromNode extends LogicNode {
 		animation.play(reverse ? actionR : action, function() {
 			runOutput(1);
 		}, blendTime, speed, loop);
-		animation.update(startFrame * Scene.active.raw.frame_time);
+		animation.update(startFrame*Scene.active.raw.frame_time);
 
 		runOutput(0);
-
 	}
 }
