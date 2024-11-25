@@ -763,10 +763,15 @@ class ArmoryExporter:
             if bobject.hide_render or not bobject.arm_visible:
                 out_object['visible'] = False
 
-            if not bobject.visible_camera:
-                out_object['visible_mesh'] = False
-            if not bobject.visible_shadow:
-                out_object['visible_shadow'] = False
+            if bpy.app.version < (3, 0, 0):
+                if not bobject.cycles_visibility:
+                    out_object['visible_mesh'] = False
+                    out_object['visible_shadow'] = False
+            else:
+                if not bobject.visible_camera:
+                    out_object['visible_mesh'] = False
+                if not bobject.visible_shadow:
+                    out_object['visible_shadow'] = False
 
             if not bobject.arm_spawn:
                 out_object['spawn'] = False
@@ -780,6 +785,25 @@ class ArmoryExporter:
             if bobject.arm_tilesheet != '':
                 out_object['tilesheet_ref'] = bobject.arm_tilesheet
                 out_object['tilesheet_action_ref'] = bobject.arm_tilesheet_action
+
+
+            if len(bobject.vertex_groups) > 0:
+                out_object['vertex_groups'] = []
+                for group in bobject.vertex_groups:
+                    verts = []
+                    for v in bobject.data.vertices:
+                        for g in v.groups:
+                            if g.group == group.index:
+                                verts.append(str(v.co.x))
+                                verts.append(str(v.co.y))
+                                verts.append(str(v.co.z))
+
+                    out_vertex_groups = {
+                        'name': group.name,
+                        'value': verts
+                    }
+                    out_object['vertex_groups'].append(out_vertex_groups)
+
 
             if len(bobject.arm_propertylist) > 0:
                 out_object['properties'] = []
@@ -1416,7 +1440,10 @@ class ArmoryExporter:
             )
 
     def export_mesh_data(self, export_mesh: bpy.types.Mesh, bobject: bpy.types.Object, o, has_armature=False):
-        export_mesh.calc_normals_split()
+        if bpy.app.version < (4, 1, 0):
+            export_mesh.calc_normals_split()
+        else:
+            updated_normals = export_mesh.corner_normals
         export_mesh.calc_loop_triangles()
 
         loops = export_mesh.loops
@@ -2680,6 +2707,7 @@ Make sure the mesh only has tris/quads.""")
             ArmoryExporter.export_physics = True
             rb = bobject.rigid_body
             shape = 0  # BOX
+
             if rb.collision_shape == 'SPHERE':
                 shape = 1
             elif rb.collision_shape == 'CONVEX_HULL':
@@ -2692,6 +2720,7 @@ Make sure the mesh only has tris/quads.""")
                 shape = 5
             elif rb.collision_shape == 'CAPSULE':
                 shape = 6
+
             body_mass = rb.mass
             is_static = self.rigid_body_static(rb)
             if is_static:
