@@ -105,7 +105,8 @@ class ARM_OT_AddNodeOverride(bpy.types.Operator):
         for setting in self.settings.values():
             setting_dicts.append({
                 "name": setting.name,
-                "value": setting.value
+                "value": setting.value,
+                "array_index": setting.array_index
             })
 
         bpy.ops.node.add_node('INVOKE_DEFAULT', type=self.type, use_transform=self.use_transform, settings=setting_dicts)
@@ -395,7 +396,10 @@ class DrawNodeBreadCrumbs():
             path_data = [path.node_tree.name for path in context.space_data.path]
             str = cls.convert_array_to_string(path_data)
             blf.position(0, 20, height-60, 0)
-            blf.size(0, 15, 72)
+            if bpy.app.version < (4, 1, 0):
+                blf.size(0, 15, 72)
+            else:
+                blf.size(15, 72)
             blf.draw(0, str)
 
     @classmethod
